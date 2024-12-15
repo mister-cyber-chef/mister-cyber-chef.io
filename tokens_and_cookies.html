@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Tale of Tokens, Cookies, and Curious Behaviors</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>A Tale of Tokens, Cookies, and Curious Behaviors</h1>
+        <nav class="blog-navigation">
+            <ul>
+                <li><a href="https://mister-cyber-chef.github.io/">·Home</a></li>
+                <li><a href="bots-and-scrapers.html">·Bots and Scrapers</a></li>
+                <li><a href="host_header_swap.html">·Host Header Swapping</a></li>
+                <li><a href="sandbox_breakout.html">·Sandbox Escaping</a></li>
+                <li><a href="another_cookieHeader_bypass.html">·Cookie Header Strikes Again</a></li>
+            </ul>
+        </nav>
+    </header>
+    <article>
+        <h2>A Discovery of Rate-Limit Bypass Using Cookies</h2>
+        <p>While performing penetration testing for a large tech company, I came across an interesting and unexpected behavior with their mobile API endpoints. The system was designed to require a valid OAuth token for each request, which is standard for modern APIs to authenticate users and control access. However, I discovered that by adding a cookie header—specifically, a valid flag but with an arbitrary value—I could bypass the rate-limiting mechanism and effectively make additional requests after hitting the original limit.</p>
+        
+        <h3>Here's How I Found It</h3>
+        <p>The mobile API had a rate limit set up, and when I hit that limit (e.g., 1,000 requests), the typical behavior was that further requests would be blocked until the limit reset. However, when I added a session cookie with a valid flag but an arbitrary value, the system allowed me to send another batch of requests, essentially resetting the rate limit. Importantly, the token itself had to be valid for this to work—the cookie alone wasn’t enough, and the token could not be invalid.</p>
+
+        <h3>Theories on Why This Happens (Hypothetical)</h3>
+        <p>While I don’t have access to the backend systems and can’t be 100% sure about the exact cause, based on my experience, I hypothesize that this could be due to how the server is handling OAuth tokens and session cookies together.</p>
+        
+        <ol>
+            <li><strong>Dual State Tracking Conflict:</strong> OAuth tokens and session cookies are typically used for different purposes: tokens authenticate requests, while cookies usually manage session state. The conflict arises when both are used together. If the system is treating OAuth tokens and session cookies as independent entities, it could end up applying separate rate-limit counters. So, while the token hits the rate limit, adding a session cookie could effectively reset that counter by creating a new session context, bypassing the limit.</li>
+            <br>
+            <li><strong>Rate-Limit Scope Misalignment:</strong> OAuth tokens are usually scoped to users or clients, while session cookies often track sessions within a web context (like browsers or devices). If the backend system isn’t reconciling these scopes properly, it could lead to the server applying different rate limits for token-only requests and token-plus-cookie requests. This would mean that once the token limit is hit, adding a session cookie could trick the system into treating the request as coming from a new entity, resetting the rate limit.</li>
+            <br>
+            <li><strong>Session Context and Polluted State:</strong> Adding a session cookie could trigger some additional session-handling logic that’s tied to web clients, not mobile endpoints. This could introduce inconsistency in how sessions are tracked, leading the server to apply different rules to requests with cookies—such as potentially allowing more requests than the mobile API intended to.</li>
+            <br>
+            <li><strong>Rate-Limit Key Construction:</strong> The rate-limit key could be constructed using the OAuth token and other headers, including cookies. If adding a session cookie modifies this key, the server might treat it as a new entity altogether and reset the rate limit. This would explain why requests continue to get through after adding the cookie.</li>
+        </ol>
+
+        <h3>Why This Matters</h3>
+        <p>While I cannot confirm the exact issue without access to the backend code, these hypotheses highlight the importance of ensuring that different forms of session management (token-based authentication and cookie-based sessions) are handled carefully when they are used together. If the system is treating the token and session cookie as independent entities, it could open the door for unintended bypasses like this one, where rate-limiting could be easily sidestepped.</p>
+
+        <h3>Final Thoughts</h3>
+        <p>This isn’t about finding a "flaw" in the system—it’s more about noticing a scenario where the interaction between two distinct authentication mechanisms (OAuth tokens and session cookies) wasn’t quite as tightly controlled as it could have been. If anything, this discovery is a reminder of how easily systems can behave in unexpected ways when different authentication or session-management methods are combined.</p>
+        
+    <p>In the end, I shared this with the team in hopes it would help them refine their approach and strengthen their system, ultimately contributing to their security posture. It's just a small piece of the puzzle, but I thought it was important to bring to light.</p>
+    <br>
+        <h3>Check out my mind map to see how my thought process went while I investigated this! It was a wild and fun ride!</h3>
+    <br>
+<div style="width: 1750opx; height: 450px; overflow: auto; border: 2px solid #666;">
+    <img src="mind_map_cookie_and_token_research.png" style="width: 1750px; height: 450px;" alt="Mind Map Image">
+</div>
+    </article>
+    <footer>
+        <div class="centered">
+            <p>&copy; 2024 The Chef's Blog</p>
+        </div>
+    </footer>
+</body>
+</html>
